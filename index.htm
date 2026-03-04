@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monster Legends Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Exo+2:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#07090f;--surface:#0e1018;--surface2:#161923;--surface3:#1e2330;
+  --border:#252d3f;--border2:#2e3850;
+  --gold:#f0b429;--gold2:#ffd97d;
+  --teal:#00e5b0;--red:#ff3d5a;
+  --text:#dde4f0;--muted:#6b7694;--muted2:#8892b0;
+  --rare-c:#5eb8ff;--epic-c:#c77dff;--legend-c:#f0b429;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 10% 0%,rgba(240,180,41,.07) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 90% 100%,rgba(0,229,176,.06) 0%,transparent 60%);pointer-events:none;z-index:0}
+
+header{position:sticky;top:0;z-index:200;background:rgba(7,9,15,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--border2);padding:10px 16px 8px;display:flex;align-items:center;gap:12px}
+.logo{font-family:'Cinzel',serif;font-size:clamp(13px,3.5vw,20px);font-weight:900;background:linear-gradient(90deg,var(--gold),var(--gold2),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:1px;white-space:nowrap}
+.logo span{-webkit-text-fill-color:var(--teal)}
+header .sp{flex:1}
+.sync-btn{display:flex;align-items:center;gap:6px;padding:7px 12px;background:transparent;border:1px solid var(--border2);border-radius:8px;color:var(--muted2);font-family:'Exo 2',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+.sync-btn:hover{border-color:var(--teal);color:var(--teal)}
+.si{display:inline-block;transition:transform .1s}
+.sync-btn.loading .si{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:53px;z-index:199}
+.tab{flex:1;padding:12px 4px;background:none;border:none;color:var(--muted);font-family:'Exo 2',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .2s;border-bottom:2px solid transparent}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold);background:rgba(240,180,41,.04)}
+.tab:hover:not(.active){color:var(--text)}
+.nbadge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;background:var(--gold);color:#07090f;font-size:10px;font-weight:800;border-radius:9px;margin-left:5px;vertical-align:middle}
+
+.panel{display:none;padding:14px;position:relative;z-index:1}
+.panel.active{display:block}
+
+.load-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:20px;text-align:center;padding:24px}
+.spinner{width:48px;height:48px;border:3px solid var(--border2);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+.lt{font-family:'Cinzel',serif;font-size:16px;color:var(--gold2)}
+.ls{font-size:13px;color:var(--muted)}
+
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.stat-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center}
+.sv{font-size:22px;font-weight:700;color:var(--gold2);line-height:1}
+.sl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-top:3px}
+
+.prog-wrap{margin-bottom:14px}
+.prog-track{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--gold));border-radius:3px;transition:width .6s ease}
+.prog-lbl{font-size:11px;color:var(--muted);margin-top:4px;text-align:right}
+
+.controls{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.sw{position:relative}
+.sw input{width:100%;padding:11px 14px 11px 40px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:14px;outline:none;transition:border-color .2s}
+.sw input:focus{border-color:var(--gold)}
+.si2{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none}
+.frow{display:flex;gap:8px;flex-wrap:wrap}
+select{flex:1;min-width:130px;padding:9px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;outline:none;cursor:pointer}
+select:focus{border-color:var(--gold)}
+
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px}
+.card{background:var(--surface2);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:default;transition:transform .2s,box-shadow .2s,border-color .2s;position:relative}
+.card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(0,0,0,.5);border-color:var(--border2)}
+.card.status-yes{border-color:rgba(0,229,176,.4)}
+.card.status-yes .cbody{background:rgba(0,229,176,.04)}
+.card.status-egg{border-color:rgba(240,180,41,.4)}
+.card.status-egg .cbody{background:rgba(240,180,41,.04)}
+.card.status-hatching{border-color:rgba(255,107,53,.4)}
+.card.status-hatching .cbody{background:rgba(255,107,53,.04)}
+.card.status-no{border-color:var(--border)}
+
+.cimg{width:100%;height:48px;background:var(--surface3);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.ficon{font-size:28px;opacity:.5}
+.estripe{position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--ec,#555)}
+
+.cbody{padding:10px}
+.ctop{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.cid{font-size:10px;color:var(--muted);font-weight:600}
+.status-chip{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:800;padding:2px 7px;border-radius:5px;letter-spacing:.5px;text-transform:uppercase;flex-shrink:0}
+.chip-yes{background:rgba(0,229,176,.18);color:var(--teal)}
+.chip-egg{background:rgba(240,180,41,.18);color:var(--gold)}
+.chip-hatching{background:rgba(255,107,53,.18);color:#ff6b35}
+.chip-no{background:rgba(107,118,148,.15);color:var(--muted)}
+.cname{font-size:13px;font-weight:700;line-height:1.2;margin-bottom:5px}
+.rbadge{display:inline-block;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px}
+.r-Rare{background:rgba(94,184,255,.15);color:var(--rare-c)}
+.r-Epic{background:rgba(199,125,255,.15);color:var(--epic-c)}
+.r-Legendary{background:rgba(240,180,41,.15);color:var(--legend-c)}
+.r-Special{background:rgba(255,107,53,.15);color:#ffa040}
+.celem{font-size:10px;color:var(--muted);margin-bottom:6px}
+.cmini{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;font-size:10px}
+.cmini .v{color:var(--text);font-weight:700;text-align:center;font-size:11px}
+.cmini .l{color:var(--muted);text-align:center;font-size:9px;letter-spacing:.5px}
+.bdot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--teal);margin-left:3px;vertical-align:middle}
+.btime{display:inline-flex;align-items:center;gap:3px;font-size:9px;color:var(--gold);background:rgba(240,180,41,.1);border-radius:4px;padding:2px 5px;margin-top:5px;font-weight:600}
+
+/* BREED TAB */
+.bh{background:var(--surface2);border:1px solid var(--border2);border-radius:14px;padding:18px 16px;margin-bottom:14px;text-align:center}
+.bh h2{font-family:'Cinzel',serif;font-size:15px;color:var(--teal);margin-bottom:6px}
+.bh p{font-size:12px;color:var(--muted);line-height:1.5}
+
+.bsel{display:grid;grid-template-columns:1fr 28px 1fr;gap:8px;align-items:center;margin-bottom:12px}
+.pcard{background:var(--surface2);border:2px solid var(--border);border-radius:14px;padding:12px 10px;cursor:pointer;transition:all .2s;text-align:center;min-height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.pcard:hover{border-color:var(--gold);background:rgba(240,180,41,.04)}
+.pcard.set{border-color:var(--teal);background:rgba(0,229,176,.04)}
+.pname{font-size:13px;font-weight:700}
+.pelem{font-size:10px;color:var(--muted)}
+.pprompt{font-size:12px;color:var(--muted);font-style:italic}
+.xs{text-align:center;font-size:20px;color:var(--gold);font-weight:900}
+
+.cbtn{width:100%;padding:13px;margin-bottom:14px;background:linear-gradient(135deg,#c8860a,var(--gold),#f7ce68);border:none;border-radius:12px;color:#07090f;font-family:'Cinzel',serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:1px}
+.cbtn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(240,180,41,.35)}
+.cbtn:disabled{opacity:.35;cursor:default;transform:none;box-shadow:none}
+
+.rblock{background:var(--surface2);border:1px solid var(--teal);border-radius:14px;overflow:hidden;animation:fu .3s ease}
+@keyframes fu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.rhdr{background:rgba(0,229,176,.07);padding:10px 14px;font-size:10px;color:var(--teal);text-transform:uppercase;letter-spacing:2px;font-weight:700}
+.ritem{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--border);transition:background .15s}
+.ritem:hover{background:rgba(255,255,255,.03)}
+.rph{width:36px;height:36px;flex-shrink:0;background:var(--surface3);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.ri{flex:1;min-width:0}
+.rn{font-size:14px;font-weight:700}
+.rm{font-size:10px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.rr{font-weight:700}
+.rt{color:var(--gold);display:flex;align-items:center;gap:2px}
+.rbg{padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0}
+.bg-own{background:rgba(0,229,176,.15);color:var(--teal)}
+.bg-egg{background:rgba(240,180,41,.15);color:var(--gold)}
+.bg-hatching{background:rgba(255,107,53,.15);color:#ff6b35}
+.bg-new{background:rgba(240,180,41,.15);color:var(--gold)}
+
+.nores{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty .ei{font-size:44px;margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⚔ Monster<span>.</span>Legends</div>
+  <div class="sp"></div>
+  <button class="sync-btn" id="debug-btn" onclick="showDebug()" style="border-color:var(--purple,#8b5cf6);color:var(--purple,#8b5cf6)">🔍 Debug</button>
+  <button class="sync-btn" id="sync-btn" onclick="loadData()">
+    <span class="si">↻</span> Sync Data
+  </button>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('collection',this)">📚 Collection <span class="nbadge" id="own-badge">0</span></button>
+  <button class="tab" onclick="switchTab('breeding',this)">🧬 Breeding Lab</button>
+</div>
+
+<div id="tab-collection" class="panel active">
+  <div id="col-content">
+    <div class="load-screen"><div class="spinner"></div><div class="lt">Loading Monsters…</div><div class="ls">Fetching your spreadsheet</div></div>
+  </div>
+</div>
+
+<div id="tab-breeding" class="panel">
+  <div id="breed-content">
+    <div class="load-screen"><div class="lt" style="color:var(--muted)">Loading…</div></div>
+  </div>
+</div>
+
+
+
+<script>
+const CSV_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vQeeKP3MLShKHv7aXiIhpsBgB0Fk6dJ3FBhCj_RTPgGmXg5UM4UWJVI5ff2pOT6JB8wQjSVIjngMF6t/pub?output=csv';
+// Multiple CORS proxies to try in order
+const PROXIES=[
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?',
+  'https://api.codetabs.com/v1/proxy?quest='
+];
+
+const EMOJI={Fire:'🔥',Water:'💧',Nature:'🌿',Thunder:'⚡',Earth:'🪨',Light:'✨',Magic:'🔮',Dark:'🌑',Special:'⭐',default:'🐉'};
+const ECOL={Fire:'#ff4757',Water:'#339af0',Nature:'#51cf66',Thunder:'#fcc419',Earth:'#a0522d',Light:'#ffe066',Magic:'#cc5de8',Dark:'#748ffc',Special:'#ff6b35'};
+
+let monsters=[];
+let selectedBreedTarget=null;
+
+// ── OWNERSHIP HELPERS ──────────────────────────────────────────────────────
+// Reads the 'Own' column from the sheet: Yes | No | Egg | Hatching
+function ownershipStatus(m){
+  const v=(m.own||'').trim().toLowerCase();
+  if(v==='yes')      return 'yes';
+  if(v==='egg')      return 'egg';
+  if(v==='hatching') return 'hatching';
+  return 'no';
+}
+function isOwned(m){ return ownershipStatus(m)==='yes'; }
+function statusChip(m){
+  const s=ownershipStatus(m);
+  const map={yes:'✓ Yes', egg:'🥚 Egg', hatching:'🐣 Hatching', no:'✗ No'};
+  return `<span class="status-chip chip-${s}">${map[s]}</span>`;
+}
+function statusCardClass(m){ return 'status-'+ownershipStatus(m); }
+
+function splitLine(l){
+  const r=[];let c='',q=false;
+  for(let i=0;i<l.length;i++){
+    if(l[i]==='"'){q=!q;continue}
+    if(l[i]===','&&!q){r.push(c);c='';continue}
+    c+=l[i];
+  }
+  r.push(c);return r;
+}
+
+function parseCSV(txt){
+  const lines=txt.trim().split('\n').filter(l=>l.trim());
+  // Keep headers with their ORIGINAL casing so g() can match them
+  const hdrs=splitLine(lines[0]).map(h=>h.trim().replace(/^"|"$/g,''));
+  console.log('[ML Tracker] Raw CSV headers:', hdrs);
+  return lines.slice(1).map(l=>{
+    const v=splitLine(l);
+    const o={};
+    hdrs.forEach((h,i)=>{ o[h]=(v[i]||'').trim().replace(/^"|"$/g,''); });
+    return o;
+  });
+}
+
+// Flexible column finder — checks exact match first, then partial
+function g(row,...keys){
+  // Try exact match (case-insensitive)
+  for(const k of keys){
+    const found=Object.keys(row).find(h=>h.toLowerCase()===k.toLowerCase());
+    if(found&&row[found]!==undefined&&row[found]!=='') return row[found];
+  }
+  // Try partial match
+  for(const k of keys){
+    const found=Object.keys(row).find(h=>h.toLowerCase().includes(k.toLowerCase()));
+    if(found&&row[found]!==undefined&&row[found]!=='') return row[found];
+  }
+  return '';
+}
+
+function mapRow(row){
+  // Log raw keys on first call to help diagnose header mismatches
+  if(!mapRow._logged){
+    console.log('[ML Tracker] CSV headers detected:', Object.keys(row));
+    console.log('[ML Tracker] First row sample:', row);
+    mapRow._logged=true;
+  }
+
+  // Match your actual Google Sheet column headers:
+  // Own | ID | Name | Rarity | Element | Books | Power | Life | Speed | Parent 1 | Parent 2 | Time
+  const id   = parseInt(g(row,'id','ID','#'))||0;
+  const name = g(row,'name','Name','monster','Monster');
+  if(!name || name==='Name') return null; // skip header row if duplicated
+
+  return{
+    id, name,
+    rarity  : g(row,'rarity','Rarity','tier'),
+    element : g(row,'element','Element','type','Type'),
+    power   : parseInt(g(row,'power','Power','atk','ATK','attack'))||0,
+    life    : parseInt(g(row,'life','Life','hp','HP','health'))||0,
+    speed   : parseInt(g(row,'speed','Speed','spd','SPD'))||0,
+    parent1 : g(row,'parent 1','Parent 1','parent1','Parent1','p1','P1','father','Mother'),
+    parent2 : g(row,'parent 2','Parent 2','parent2','Parent2','p2','P2'),
+    time    : g(row,'time','Time','breed_time','Breed Time','breeding time','Time to Breed'),
+    books   : g(row,'books','Books','book','Book','collection'),
+    own     : g(row,'own','Own','owned','Owned'),
+  };
+}
+
+function key(m){return m.id||m.name}
+function ec(el){if(!el)return'#555';const b=el.split('-')[0].split(' ')[0];return ECOL[b]||'#555'}
+function em(el){if(!el)return EMOJI.default;const b=el.split('-')[0].split(' ')[0];return EMOJI[b]||EMOJI.default}
+function rc(r){if(!r)return'r-Rare';if(r.startsWith('Special'))return'r-Special';return'r-'+r}
+
+async function loadData(){
+  const btn=document.getElementById('sync-btn');
+  btn.classList.add('loading');
+  btn.innerHTML='<span class="si">↻</span> Syncing…';
+  showLoad('col-content');showLoad('breed-content');
+
+  let txt=null;
+
+  // Try direct first (works from a web server / Claude.ai preview)
+  try{
+    const res=await fetch(CSV_URL,{mode:'cors'});
+    if(res.ok){
+      const t=await res.text();
+      if(t.includes(',')&&t.split('\n').length>2) txt=t;
+    }
+  }catch(e){}
+
+  // Try each CORS proxy in order
+  if(!txt){
+    for(const proxy of PROXIES){
+      try{
+        const res=await fetch(proxy+encodeURIComponent(CSV_URL));
+        if(!res.ok) continue;
+        const t=await res.text();
+        if(t.includes(',')&&t.split('\n').length>2){txt=t;break;}
+      }catch(e){}
+    }
+  }
+
+  if(!txt){
+    showErr('col-content','');
+    showErr('breed-content','hidden');
+  } else {
+    monsters=parseCSV(txt).map(mapRow).filter(Boolean);
+    if(monsters.length===0){
+      showErr('col-content','CSV loaded but no monsters were found. Check that your sheet has data rows with a header row.');
+      showErr('breed-content','hidden');
+    } else {
+      renderAll();
+    }
+  }
+
+  btn.classList.remove('loading');
+  btn.innerHTML='<span class="si">↻</span> Sync Data';
+}
+
+function showLoad(id){
+  document.getElementById(id).innerHTML=`<div class="load-screen"><div class="spinner"></div><div class="lt">Loading Monsters…</div><div class="ls">Fetching spreadsheet</div></div>`;
+}
+function showErr(id,msg){
+  if(msg==='hidden'){document.getElementById(id).innerHTML='';return;}
+  // Show friendly paste UI — most reliable fallback
+  document.getElementById(id).innerHTML=`<div class="load-screen">
+    <div style="font-size:40px">📋</div>
+    <div class="lt">Paste Your Sheet Data</div>
+    <div class="ls" style="max-width:340px;line-height:1.6">
+      Auto-fetch was blocked by your browser.<br>
+      <strong style="color:var(--gold2)">Easy fix in 3 steps:</strong><br>
+      1. Open your sheet's CSV link in a new tab<br>
+      2. Select All (Ctrl+A) → Copy (Ctrl+C)<br>
+      3. Paste below and tap Load
+    </div>
+    <div style="margin-top:4px;width:100%;max-width:440px">
+      <a href="${CSV_URL}" target="_blank"
+        style="display:block;margin-bottom:12px;font-size:11px;color:var(--teal);word-break:break-all;text-decoration:none;background:rgba(0,229,176,.07);padding:8px 12px;border-radius:8px;border:1px solid rgba(0,229,176,.2)">
+        🔗 Open CSV in new tab →
+      </a>
+      <textarea id="csv-paste" rows="6" placeholder="Paste CSV data here…"
+        style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:11px;padding:10px;font-family:monospace;resize:vertical;outline:none;line-height:1.4"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button onclick="loadData()" style="flex:1;padding:11px;background:transparent;border:1px solid var(--border2);border-radius:8px;color:var(--muted2);font-family:'Exo 2',sans-serif;font-size:13px;font-weight:700;cursor:pointer">↻ Retry Auto</button>
+        <button onclick="loadFromPaste()" style="flex:2;padding:11px;background:linear-gradient(135deg,#c8860a,var(--gold));border:none;border-radius:8px;color:#07090f;font-family:'Exo 2',sans-serif;font-size:13px;font-weight:700;cursor:pointer">⚡ Load Pasted Data</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function loadFromPaste(){
+  const txt=(document.getElementById('csv-paste')||{}).value||'';
+  if(!txt.trim()){alert('Please paste some CSV text first.');return;}
+  monsters=parseCSV(txt).map(mapRow).filter(Boolean);
+  if(!monsters.length){alert('No monsters found in pasted text. Check the format.');return;}
+  renderAll();
+}
+
+function renderAll(){renderCol();renderBreed();updateBadge()}
+
+function showDebug(){
+  if(!monsters.length){alert('No monsters loaded yet.');return;}
+  const raw=monsters[0];
+  const keys=Object.keys(raw);
+  const vals=Object.values(raw);
+  let msg='=== COLUMN MAPPING ===\n';
+  keys.forEach((k,i)=>{ msg+=`${k}: "${vals[i]}"\n`; });
+  msg+='\n=== FIRST RAW ROW KEYS (from CSV) ===\n';
+  msg+=JSON.stringify(Object.keys(monsters[0]));
+  console.log(msg);
+  alert(msg);
+}
+
+
+// ── COLLECTION ───────────────────────────────────
+function renderCol(){
+  const sv=(document.getElementById('csearch')||{}).value||'';
+  const rv=(document.getElementById('cfilt-r')||{}).value||'';
+  const ev=(document.getElementById('cfilt-e')||{}).value||'';
+  const ov=(document.getElementById('cfilt-o')||{}).value||'';
+
+  const ownedN=monsters.filter(m=>isOwned(m)).length;
+  const breedN=monsters.filter(m=>m.parent1&&m.parent2).length;
+  const pct=monsters.length?Math.round(ownedN/monsters.length*100):0;
+
+  const rarities=[...new Set(monsters.map(m=>m.rarity).filter(Boolean))].sort();
+  const elems=[...new Set(monsters.map(m=>(m.element||'').split('-')[0]).filter(Boolean))].sort();
+
+  let filtered=monsters.filter(m=>{
+    if(sv&&!m.name.toLowerCase().includes(sv.toLowerCase()))return false;
+    if(rv&&m.rarity!==rv)return false;
+    if(ev&&!m.element.includes(ev))return false;
+    if(ov==='owned'&&ownershipStatus(m)!=='yes')return false;
+    if(ov==='egg'&&ownershipStatus(m)!=='egg')return false;
+    if(ov==='hatching'&&ownershipStatus(m)!=='hatching')return false;
+    if(ov==='not-owned'&&ownershipStatus(m)!=='no')return false;
+    if(ov==='breedable'&&!(m.parent1&&m.parent2))return false;
+    return true;
+  });
+
+  document.getElementById('col-content').innerHTML=`
+    <div class="stats-bar">
+      <div class="stat-box"><div class="sv">${monsters.length}</div><div class="sl">Total</div></div>
+      <div class="stat-box"><div class="sv" style="color:var(--teal)">${ownedN}</div><div class="sl">Yes</div></div>
+      <div class="stat-box"><div class="sv">${pct}%</div><div class="sl">Progress</div></div>
+      <div class="stat-box"><div class="sv" style="color:var(--legend-c)">${breedN}</div><div class="sl">Breedable</div></div>
+    </div>
+    <div class="prog-wrap">
+      <div class="prog-track"><div class="prog-fill" style="width:${pct}%"></div></div>
+      <div class="prog-lbl">${ownedN} owned · ${monsters.filter(m=>ownershipStatus(m)==="egg").length} egg · ${monsters.filter(m=>ownershipStatus(m)==="hatching").length} hatching</div>
+    </div>
+    <div class="controls">
+      <div class="sw"><span class="si2">🔍</span>
+        <input type="text" id="csearch" placeholder="Search monsters…" value="${sv}" oninput="renderCol()">
+      </div>
+      <div class="frow">
+        <select id="cfilt-r" onchange="renderCol()">
+          <option value="">All Rarities</option>
+          ${rarities.map(r=>`<option ${r===rv?'selected':''}>${r}</option>`).join('')}
+        </select>
+        <select id="cfilt-e" onchange="renderCol()">
+          <option value="">All Elements</option>
+          ${elems.map(e=>`<option ${e===ev?'selected':''}>${e}</option>`).join('')}
+        </select>
+        <select id="cfilt-o" onchange="renderCol()">
+          <option value="">All</option>
+          <option value="owned" ${ov==='owned'?'selected':''}>✓ Yes (Owned)</option>
+          <option value="egg" ${ov==='egg'?'selected':''}>🥚 Egg</option>
+          <option value="hatching" ${ov==='hatching'?'selected':''}>🐣 Hatching</option>
+          <option value="not-owned" ${ov==='not-owned'?'selected':''}>✗ No (Missing)</option>
+          <option value="breedable" ${ov==='breedable'?'selected':''}>🟢 Breedable</option>
+        </select>
+      </div>
+    </div>
+    ${filtered.length?`<div class="mgrid">${filtered.map(cardHTML).join('')}</div>`
+      :`<div class="empty"><div class="ei">🔎</div><p>No monsters match filters</p></div>`}
+  `;
+}
+
+function cardHTML(m){
+  const isBreed=!!(m.parent1&&m.parent2);
+  const color=ec(m.element);
+  const emoji=em(m.element);
+  return`<div class="card ${statusCardClass(m)}">
+    <div class="cimg">
+      <div class="ficon">${emoji}</div>
+      <div class="estripe" style="background:${color}"></div>
+    </div>
+    <div class="cbody">
+      <div class="ctop">
+        <span class="cid">#${m.id||'—'}</span>
+        ${statusChip(m)}
+      </div>
+      <div class="cname">${m.name}${isBreed?'<span class="bdot"></span>':''}</div>
+      <span class="rbadge ${rc(m.rarity)}">${m.rarity||'?'}</span>
+      <div class="celem">${m.element||'—'}</div>
+      <div class="cmini">
+        <span class="v">${m.power?(m.power/1000).toFixed(1)+'k':'—'}</span>
+        <span class="v">${m.life?(m.life/1000).toFixed(1)+'k':'—'}</span>
+        <span class="v">${m.speed||'—'}</span>
+        <span class="l">PWR</span><span class="l">LIFE</span><span class="l">SPD</span>
+      </div>
+      ${m.time?`<div class="btime">⏱ ${m.time}</div>`:''}
+    </div>
+  </div>`;
+}
+
+// Ownership is read-only from the sheet — no manual toggle needed
+function updateBadge(){
+  document.getElementById('own-badge').textContent=monsters.filter(m=>isOwned(m)).length;
+}
+
+// ── BREEDING ─────────────────────────────────────
+function renderBreed(){
+  const breedable=monsters.filter(m=>m.parent1&&m.parent2);
+  document.getElementById('breed-content').innerHTML=`
+    <div class="bh">
+      <h2>🧬 Breeding Lab</h2>
+      <p>Select a breedable monster to see its recipe.</p>
+    </div>
+    <div class="controls" style="margin-bottom:14px">
+      <div class="sw">
+        <span class="si2">🔍</span>
+        <input type="text" id="bsearch" placeholder="Search breedable monsters…" oninput="renderBreedList()">
+      </div>
+    </div>
+    <div id="breed-list"></div>
+    <div id="breed-recipe"></div>
+  `;
+  renderBreedList();
+  if(selectedBreedTarget) showRecipe(selectedBreedTarget);
+}
+
+function renderBreedList(){
+  const q=(document.getElementById('bsearch')||{}).value||'';
+  const breedable=monsters.filter(m=>m.parent1&&m.parent2&&(!q||m.name.toLowerCase().includes(q.toLowerCase())));
+  const div=document.getElementById('breed-list');
+  if(!breedable.length){
+    div.innerHTML=`<div class="empty"><div class="ei">🔎</div><p>No breedable monsters found</p></div>`;
+    return;
+  }
+  div.innerHTML=`<div class="mgrid">${breedable.map(m=>{
+    const isSelected=selectedBreedTarget&&selectedBreedTarget.name===m.name;
+    const color=ec(m.element);
+    const emoji=em(m.element);
+    return`<div class="card ${statusCardClass(m)} breed-selectable ${isSelected?'breed-active':''}"
+      data-mname="${m.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" onclick="selectBreedTarget(this.dataset.mname)"
+      style="${isSelected?'border-color:var(--gold);box-shadow:0 0 0 2px rgba(240,180,41,.3)':''}">
+      <div class="cimg">
+        <div class="ficon">${emoji}</div>
+        <div class="estripe" style="background:${color}"></div>
+      </div>
+      <div class="cbody">
+        <div class="ctop">
+          <span class="cid">#${m.id||'—'}</span>
+          ${statusChip(m)}
+        </div>
+        <div class="cname">${m.name}</div>
+        <span class="rbadge ${rc(m.rarity)}">${m.rarity||'?'}</span>
+        <div class="celem">${m.element||'—'}</div>
+        ${m.time?`<div class="btime">⏱ ${m.time}</div>`:''}
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function selectBreedTarget(name){
+  selectedBreedTarget=monsters.find(m=>m.name===name)||null;
+  // Re-render list to update selection highlight
+  renderBreedList();
+  if(selectedBreedTarget) showRecipe(selectedBreedTarget);
+}
+
+function showRecipe(m){
+  const div=document.getElementById('breed-recipe');
+  if(!div)return;
+  const ownedStatus=ownershipStatus(m);
+
+  // Look up parent info if available
+  const p1data=monsters.find(p=>p.name.toLowerCase()===m.parent1.toLowerCase());
+  const p2data=monsters.find(p=>p.name.toLowerCase()===m.parent2.toLowerCase());
+
+  function parentCard(pdata,pname){
+    const emoji=pdata?em(pdata.element):EMOJI.default;
+    const color=pdata?ec(pdata.element):'#555';
+    const isOwn=pdata&&isOwned(pdata);
+    return`<div style="flex:1;background:var(--surface3);border:1px solid var(--border2);border-radius:12px;padding:14px;text-align:center;border-top:3px solid ${color}">
+      <div style="font-size:32px;margin-bottom:6px">${emoji}</div>
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px">${pname}</div>
+      ${pdata?`<div style="font-size:10px;color:var(--muted);margin-bottom:4px">${pdata.element}</div>
+      <span class="rbadge ${rc(pdata.rarity)}">${pdata.rarity}</span>`
+      :`<div style="font-size:10px;color:var(--muted)">Not in roster</div>`}
+      ${isOwn?`<div style="margin-top:6px;font-size:11px;color:var(--teal);font-weight:700">✓ Owned</div>`
+      :`<div style="margin-top:6px;font-size:11px;color:var(--muted)">Not owned</div>`}
+    </div>`;
+  }
+
+  div.innerHTML=`<div class="rblock" style="margin-top:16px">
+    <div class="rhdr">🧪 Recipe for ${m.name}</div>
+    <div style="padding:16px">
+
+      <!-- Target monster summary -->
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface3);border-radius:12px;margin-bottom:16px;border-left:4px solid ${ec(m.element)}">
+        <div style="font-size:36px">${em(m.element)}</div>
+        <div style="flex:1">
+          <div style="font-size:16px;font-weight:700">${m.name}</div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px">
+            <span class="rbadge ${rc(m.rarity)}">${m.rarity}</span>
+            <span style="font-size:11px;color:var(--muted)">${m.element}</span>
+            ${m.time?`<span class="btime">⏱ ${m.time}</span>`:''}
+          </div>
+        </div>
+        ${statusChip(m)}
+      </div>
+
+      <!-- Parents -->
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;font-weight:700">Required Parents</div>
+      <div style="display:flex;gap:10px;align-items:stretch">
+        ${parentCard(p1data,m.parent1)}
+        <div style="display:flex;align-items:center;font-size:22px;color:var(--gold);font-weight:900;flex-shrink:0">✕</div>
+        ${parentCard(p2data,m.parent2)}
+      </div>
+
+      ${m.power||m.life||m.speed?`
+      <!-- Stats -->
+      <div style="margin-top:16px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;font-weight:700">Offspring Stats</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center">
+        <div style="background:var(--surface3);border-radius:10px;padding:10px">
+          <div style="font-size:18px;font-weight:700;color:var(--red)">⚔ ${m.power?(m.power/1000).toFixed(1)+'k':'—'}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">POWER</div>
+        </div>
+        <div style="background:var(--surface3);border-radius:10px;padding:10px">
+          <div style="font-size:18px;font-weight:700;color:var(--teal)">❤ ${m.life?(m.life/1000).toFixed(1)+'k':'—'}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">LIFE</div>
+        </div>
+        <div style="background:var(--surface3);border-radius:10px;padding:10px">
+          <div style="font-size:18px;font-weight:700;color:var(--gold)">💨 ${m.speed||'—'}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">SPEED</div>
+        </div>
+      </div>`:''}
+
+    </div>
+  </div>`;
+
+  // Scroll recipe into view smoothly
+  setTimeout(()=>div.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+}
+
+function switchTab(id,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+}
+
+loadData();
+</script>
+</body>
+</html>
