@@ -133,6 +133,49 @@ select:focus{border-color:var(--gold)}
 .bg-new{background:rgba(240,180,41,.15);color:var(--gold)}
 
 .nores{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+
+/* ── TEAM TAB ── */
+.team-hero{background:var(--surface2);border:1px solid var(--border2);border-radius:14px;padding:20px 16px;margin-bottom:16px;text-align:center}
+.team-hero h2{font-family:'Cinzel',serif;font-size:16px;color:var(--gold2);margin-bottom:6px}
+.team-hero p{font-size:12px;color:var(--muted);line-height:1.6}
+.team-strategy{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
+.strat-btn{padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-family:'Exo 2',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.5px}
+.strat-btn.active{background:rgba(240,180,41,.12);border-color:var(--gold);color:var(--gold)}
+.strat-btn:hover:not(.active){border-color:var(--border2);color:var(--text)}
+.build-btn{width:100%;padding:14px;background:linear-gradient(135deg,#b8730a,var(--gold),#ffe08a);border:none;border-radius:12px;color:#07090f;font-family:'Cinzel',serif;font-size:15px;font-weight:900;cursor:pointer;transition:all .2s;letter-spacing:1px;margin-bottom:20px}
+.build-btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(240,180,41,.4)}
+.team-podium{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;animation:fu .4s ease}
+.podium-card{background:var(--surface2);border:2px solid var(--border);border-radius:16px;overflow:hidden;position:relative;transition:transform .2s}
+.podium-card:hover{transform:translateY(-4px)}
+.podium-card.rank-1{border-color:var(--gold);box-shadow:0 0 24px rgba(240,180,41,.2)}
+.podium-card.rank-2{border-color:#c0c0c0;box-shadow:0 0 16px rgba(192,192,192,.15)}
+.podium-card.rank-3{border-color:#cd7f32;box-shadow:0 0 16px rgba(205,127,50,.15)}
+.podium-crown{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-size:18px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}
+.podium-emoji{font-size:44px;padding:32px 0 10px;text-align:center;display:block}
+.podium-body{padding:10px 10px 12px}
+.podium-rank{font-size:9px;text-align:center;text-transform:uppercase;letter-spacing:2px;font-weight:800;margin-bottom:4px}
+.rank-1 .podium-rank{color:var(--gold)}
+.rank-2 .podium-rank{color:#c0c0c0}
+.rank-3 .podium-rank{color:#cd7f32}
+.podium-name{font-size:13px;font-weight:800;text-align:center;line-height:1.2;margin-bottom:5px}
+.podium-rarity{text-align:center;margin-bottom:6px}
+.podium-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-bottom:6px}
+.podium-stat{text-align:center}
+.podium-stat .v{font-size:11px;font-weight:700;color:var(--text)}
+.podium-stat .l{font-size:8px;color:var(--muted);letter-spacing:.5px}
+.podium-score{text-align:center;font-size:10px;color:var(--muted);padding-top:4px;border-top:1px solid var(--border)}
+.podium-score span{color:var(--gold2);font-weight:700}
+.team-analysis{background:var(--surface2);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px}
+.analysis-hdr{background:rgba(240,180,41,.07);padding:10px 16px;font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:2px;font-weight:700}
+.analysis-body{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.stat-row{display:flex;align-items:center;gap:10px}
+.stat-row-label{font-size:11px;color:var(--muted);width:56px;flex-shrink:0;text-transform:uppercase;letter-spacing:.5px}
+.stat-bar-wrap{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.stat-bar-fill{height:100%;border-radius:4px;transition:width .8s ease}
+.stat-row-val{font-size:12px;font-weight:700;width:44px;text-align:right;flex-shrink:0}
+.elem-diversity{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px;border-top:1px solid var(--border)}
+.elem-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;background:var(--surface3)}
+.strategy-note{padding:12px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted2);line-height:1.6}
 .empty{text-align:center;padding:60px 20px;color:var(--muted)}
 .empty .ei{font-size:44px;margin-bottom:10px}
 </style>
@@ -151,6 +194,7 @@ select:focus{border-color:var(--gold)}
 <div class="tabs">
   <button class="tab active" onclick="switchTab('collection',this)">📚 Collection <span class="nbadge" id="own-badge">0</span></button>
   <button class="tab" onclick="switchTab('breeding',this)">🧬 Breeding Lab</button>
+  <button class="tab" onclick="switchTab('team',this)">⚔ Best Team</button>
 </div>
 
 <div id="tab-collection" class="panel active">
@@ -165,7 +209,11 @@ select:focus{border-color:var(--gold)}
   </div>
 </div>
 
-
+<div id="tab-team" class="panel">
+  <div id="team-content">
+    <div class="load-screen"><div class="lt" style="color:var(--muted)">Loading…</div></div>
+  </div>
+</div>
 
 <script>
 const CSV_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vQeeKP3MLShKHv7aXiIhpsBgB0Fk6dJ3FBhCj_RTPgGmXg5UM4UWJVI5ff2pOT6JB8wQjSVIjngMF6t/pub?output=csv';
@@ -356,7 +404,7 @@ function loadFromPaste(){
   renderAll();
 }
 
-function renderAll(){renderCol();renderBreed();updateBadge()}
+function renderAll(){renderCol();renderBreed();renderTeam();updateBadge()}
 
 function showDebug(){
   if(!monsters.length){alert('No monsters loaded yet.');return;}
@@ -604,6 +652,208 @@ function showRecipe(m){
 
   // Scroll recipe into view smoothly
   setTimeout(()=>div.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+}
+
+// ── TEAM BUILDER ─────────────────────────────────────────────────────────────
+let activeStrategy = 'balanced';
+
+const STRATEGIES = {
+  balanced: {
+    label: '⚖ Balanced',
+    desc: 'Best overall stats with element variety for broad coverage.',
+    score: m => {
+      const base = (m.power * 0.4) + (m.life * 0.1) + (m.speed * 2);
+      return base;
+    }
+  },
+  attacker: {
+    label: '⚔ Attackers',
+    desc: 'Maximum Power — pick the hardest-hitting monsters you own.',
+    score: m => m.power * 1.0 + m.speed * 0.5
+  },
+  tank: {
+    label: '🛡 Tanks',
+    desc: 'Maximum Life — the most durable team possible.',
+    score: m => m.life * 1.0 + m.power * 0.2
+  },
+  speed: {
+    label: '💨 Speed',
+    desc: 'Fastest team — strike before the enemy every round.',
+    score: m => m.speed * 1.0 + m.power * 0.3
+  },
+  legendary: {
+    label: '👑 Legendary',
+    desc: 'Best team from Legendary & Special rarity monsters only.',
+    score: m => {
+      const isLeg = m.rarity === 'Legendary' || (m.rarity || '').startsWith('Special');
+      if (!isLeg) return -1;
+      return (m.power * 0.4) + (m.life * 0.1) + (m.speed * 2);
+    }
+  }
+};
+
+function renderTeam() {
+  const div = document.getElementById('team-content');
+  if (!div) return;
+
+  // Debug: log ownership data to help diagnose
+  console.log('[ML Team] Total monsters:', monsters.length);
+  console.log('[ML Team] Sample own values:', monsters.slice(0,5).map(m=>({name:m.name, own:m.own, status:ownershipStatus(m)})));
+
+  const ownedList = monsters.filter(m => isOwned(m));
+  console.log('[ML Team] Owned count:', ownedList.length, ownedList.map(m=>m.name));
+
+  if (ownedList.length === 0) {
+    // Show what own values actually look like so user can debug
+    const sampleOwn = [...new Set(monsters.slice(0,20).map(m=>(m.own||'(empty)').trim()))];
+    div.innerHTML = `<div class="load-screen">
+      <div style="font-size:44px">🏰</div>
+      <div class="lt">No Owned Monsters Found</div>
+      <div class="ls" style="max-width:340px">
+        Looking for <strong style="color:var(--gold2)">Own = "Yes"</strong> in your sheet.<br>
+        Sample values seen: <strong style="color:var(--teal)">${sampleOwn.join(', ')}</strong><br><br>
+        If your column uses different text, check the Debug button.
+      </div>
+    </div>`;
+    return;
+  }
+
+  div.innerHTML = `
+    <div class="team-hero">
+      <h2>⚔ Best Team Builder</h2>
+      <p>Picks your top 3 owned monsters based on strategy.<br>
+         Score = weighted stat formula per strategy.</p>
+    </div>
+    <div class="team-strategy">
+      ${Object.entries(STRATEGIES).map(([k,s]) =>
+        `<button class="strat-btn ${k===activeStrategy?'active':''}" onclick="setStrategy('${k}')">${s.label}</button>`
+      ).join('')}
+    </div>
+    <button class="build-btn" onclick="buildTeam()">⚔ Build My Best Team</button>
+    <div id="team-result"></div>
+  `;
+
+  buildTeam();
+}
+
+function setStrategy(key) {
+  activeStrategy = key;
+  renderTeam();
+}
+
+function buildTeam() {
+  const resultDiv = document.getElementById('team-result');
+  if (!resultDiv) return;
+
+  const strat = STRATEGIES[activeStrategy];
+  const ownedMonsters = monsters.filter(m => isOwned(m));
+
+  // Score all owned monsters
+  const scored = ownedMonsters
+    .map(m => ({ m, score: strat.score(m) }))
+    .filter(x => x.score >= 0)
+    .sort((a, b) => b.score - a.score);
+
+  if (scored.length === 0) {
+    resultDiv.innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted)">No owned monsters qualify for this strategy.</div>`;
+    return;
+  }
+
+  // For balanced: apply element diversity — prefer different primary elements
+  let team = [];
+  if (activeStrategy === 'balanced') {
+    const usedElems = new Set();
+    for (const {m, score} of scored) {
+      if (team.length >= 3) break;
+      const primaryElem = (m.element || '').split('-')[0].replace('Special-','').replace('Special','');
+      // Allow if element not seen, or if we're running out of diversity options
+      const diversityBonus = !usedElems.has(primaryElem) ? 1.15 : 1.0;
+      team.push({ m, score: score * diversityBonus, elem: primaryElem });
+      usedElems.add(primaryElem);
+    }
+    // Fill to 3 if diversity removed candidates
+    if (team.length < 3) {
+      for (const {m, score} of scored) {
+        if (team.length >= 3) break;
+        if (!team.find(t => t.m.name === m.name)) {
+          team.push({ m, score, elem: (m.element||'').split('-')[0] });
+        }
+      }
+    }
+  } else {
+    team = scored.slice(0, 3).map(({m, score}) => ({
+      m, score, elem: (m.element||'').split('-')[0]
+    }));
+  }
+
+  const ranks = ['rank-1','rank-2','rank-3'];
+  const crowns = ['👑','🥈','🥉'];
+  const rankLabels = ['#1 Champion','#2 Second','#3 Third'];
+
+  // Totals for analysis bars
+  const totalPower = team.reduce((s,t) => s + t.m.power, 0);
+  const totalLife  = team.reduce((s,t) => s + t.m.life, 0);
+  const totalSpeed = team.reduce((s,t) => s + t.m.speed, 0);
+  const maxPossiblePower = ownedMonsters.slice(0,3).reduce((s,m)=>s+m.power,0) || 1;
+  const maxPossibleLife  = [...ownedMonsters].sort((a,b)=>b.life-a.life).slice(0,3).reduce((s,m)=>s+m.life,0) || 1;
+  const maxPossibleSpeed = [...ownedMonsters].sort((a,b)=>b.speed-a.speed).slice(0,3).reduce((s,m)=>s+m.speed,0) || 1;
+
+  const elems = team.map(t => ({ name: t.elem, color: ec(t.m.element), emoji: em(t.m.element) }));
+
+  resultDiv.innerHTML = `
+    <!-- Podium -->
+    <div class="team-podium">
+      ${team.map(({m, score}, i) => `
+        <div class="podium-card ${ranks[i]}">
+          <div class="podium-crown">${crowns[i]}</div>
+          <span class="podium-emoji">${em(m.element)}</span>
+          <div class="podium-body">
+            <div class="podium-rank">${rankLabels[i]}</div>
+            <div class="podium-name">${m.name}</div>
+            <div class="podium-rarity">
+              <span class="rbadge ${rc(m.rarity)}">${m.rarity||'?'}</span>
+            </div>
+            <div class="podium-stats">
+              <div class="podium-stat"><div class="v">${m.power?(m.power/1000).toFixed(1)+'k':'—'}</div><div class="l">PWR</div></div>
+              <div class="podium-stat"><div class="v">${m.life?(m.life/1000).toFixed(1)+'k':'—'}</div><div class="l">LIFE</div></div>
+              <div class="podium-stat"><div class="v">${m.speed||'—'}</div><div class="l">SPD</div></div>
+            </div>
+            <div class="podium-score">Score <span>${Math.round(score).toLocaleString()}</span></div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <!-- Analysis -->
+    <div class="team-analysis">
+      <div class="analysis-hdr">📊 Team Analysis</div>
+      <div class="analysis-body">
+        <div class="stat-row">
+          <div class="stat-row-label">Power</div>
+          <div class="stat-bar-wrap"><div class="stat-bar-fill" style="width:${Math.min(100,Math.round(totalPower/maxPossiblePower*100))}%;background:#ff4757"></div></div>
+          <div class="stat-row-val" style="color:#ff4757">${(totalPower/1000).toFixed(1)}k</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-row-label">Life</div>
+          <div class="stat-bar-wrap"><div class="stat-bar-fill" style="width:${Math.min(100,Math.round(totalLife/maxPossibleLife*100))}%;background:var(--teal)"></div></div>
+          <div class="stat-row-val" style="color:var(--teal)">${(totalLife/1000).toFixed(1)}k</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-row-label">Speed</div>
+          <div class="stat-bar-wrap"><div class="stat-bar-fill" style="width:${Math.min(100,Math.round(totalSpeed/maxPossibleSpeed*100))}%;background:var(--gold)"></div></div>
+          <div class="stat-row-val" style="color:var(--gold)">${totalSpeed.toLocaleString()}</div>
+        </div>
+      </div>
+      <div class="elem-diversity">
+        ${elems.map(e => `<span class="elem-pill" style="border:1px solid ${e.color}40;color:${e.color}">${e.emoji} ${e.name}</span>`).join('')}
+      </div>
+      <div class="strategy-note">
+        <strong style="color:var(--gold2)">${strat.label}:</strong> ${strat.desc}
+        ${activeStrategy==='balanced' && new Set(elems.map(e=>e.name)).size===3
+          ? ' Element diversity bonus applied — 3 unique elements for broad coverage.' : ''}
+      </div>
+    </div>
+  `;
 }
 
 function switchTab(id,btn){
