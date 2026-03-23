@@ -133,6 +133,10 @@ select:focus{border-color:var(--gold)}
 .bg-new{background:rgba(240,180,41,.15);color:var(--gold)}
 
 .nores{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+.avail-chip{display:inline-flex;align-items:center;gap:2px;font-size:9px;font-weight:800;padding:2px 6px;border-radius:5px;letter-spacing:.4px;margin-top:4px}
+.avail-ready{background:rgba(0,229,176,.15);color:var(--teal)}
+.avail-one{background:rgba(240,180,41,.15);color:var(--gold)}
+.avail-none{background:rgba(107,118,148,.12);color:var(--muted)}
 
 /* ── TEAM TAB ── */
 .team-hero{background:var(--surface2);border:1px solid var(--border2);border-radius:14px;padding:20px 16px;margin-bottom:16px;text-align:center}
@@ -519,8 +523,18 @@ function updateBadge(){
 }
 
 // ── BREEDING ─────────────────────────────────────
+// How many parents does the user own for this monster?
+function parentOwnCount(m){
+  const p1=monsters.find(p=>p.name.toLowerCase()===(m.parent1||'').toLowerCase());
+  const p2=monsters.find(p=>p.name.toLowerCase()===(m.parent2||'').toLowerCase());
+  const has1=p1?isOwned(p1):false;
+  const has2=p2?isOwned(p2):false;
+  return (has1?1:0)+(has2?1:0);
+}
+
+let breedFilter='all'; // 'all' | 'ready' | 'one'
+
 function renderBreed(){
-  const breedable=monsters.filter(m=>m.parent1&&m.parent2);
   document.getElementById('breed-content').innerHTML=`
     <div class="bh">
       <h2>🧬 Breeding Lab</h2>
@@ -531,6 +545,11 @@ function renderBreed(){
         <span class="si2">🔍</span>
         <input type="text" id="bsearch" placeholder="Search breedable monsters…" oninput="renderBreedList()">
       </div>
+      <div class="frow">
+        <button class="strat-btn ${breedFilter==='all'?'active':''}"   onclick="setBreedFilter('all')">🐉 All</button>
+        <button class="strat-btn ${breedFilter==='ready'?'active':''}" onclick="setBreedFilter('ready')">✅ Can Breed (2/2)</button>
+        <button class="strat-btn ${breedFilter==='one'?'active':''}"   onclick="setBreedFilter('one')">🔶 Have 1 of 2</button>
+      </div>
     </div>
     <div id="breed-list"></div>
     <div id="breed-recipe"></div>
@@ -539,18 +558,49 @@ function renderBreed(){
   if(selectedBreedTarget) showRecipe(selectedBreedTarget);
 }
 
+function setBreedFilter(f){
+  breedFilter=f;
+  renderBreed();
+}
+
 function renderBreedList(){
   const q=(document.getElementById('bsearch')||{}).value||'';
-  const breedable=monsters.filter(m=>m.parent1&&m.parent2&&(!q||m.name.toLowerCase().includes(q.toLowerCase())));
+  let breedable=monsters.filter(m=>m.parent1&&m.parent2);
+
+  // Apply parent availability filter
+  if(breedFilter==='ready'){
+    breedable=breedable.filter(m=>parentOwnCount(m)===2);
+  } else if(breedFilter==='one'){
+    breedable=breedable.filter(m=>parentOwnCount(m)===1);
+  }
+
+  // Apply search
+  if(q) breedable=breedable.filter(m=>m.name.toLowerCase().includes(q.toLowerCase()));
+
   const div=document.getElementById('breed-list');
   if(!breedable.length){
-    div.innerHTML=`<div class="empty"><div class="ei">🔎</div><p>No breedable monsters found</p></div>`;
+    const msgs={
+      all:'No breedable monsters found.',
+      ready:'You do not own both parents for any breedable monster yet.',
+      one:'No monsters where you own exactly 1 of 2 parents.'
+    };
+    div.innerHTML=`<div class="empty"><div class="ei">🔎</div><p>${msgs[breedFilter]}</p></div>`;
     return;
   }
+
+  // Sort: ready first, then 1-of-2, then 0
+  breedable.sort((a,b)=>parentOwnCount(b)-parentOwnCount(a));
+
   div.innerHTML=`<div class="mgrid">${breedable.map(m=>{
     const isSelected=selectedBreedTarget&&selectedBreedTarget.name===m.name;
     const color=ec(m.element);
     const emoji=em(m.element);
+    const pCount=parentOwnCount(m);
+    const availBadge=pCount===2
+      ? `<span class="avail-chip avail-ready">✅ 2/2</span>`
+      : pCount===1
+      ? `<span class="avail-chip avail-one">🔶 1/2</span>`
+      : `<span class="avail-chip avail-none">✗ 0/2</span>`;
     return`<div class="card ${statusCardClass(m)} breed-selectable ${isSelected?'breed-active':''}"
       data-mname="${m.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" onclick="selectBreedTarget(this.dataset.mname)"
       style="${isSelected?'border-color:var(--gold);box-shadow:0 0 0 2px rgba(240,180,41,.3)':''}">
@@ -566,6 +616,7 @@ function renderBreedList(){
         <div class="cname">${m.name}</div>
         <span class="rbadge ${rc(m.rarity)}">${m.rarity||'?'}</span>
         <div class="celem">${m.element||'—'}</div>
+        ${availBadge}
         ${m.time?`<div class="btime">⏱ ${m.time}</div>`:''}
       </div>
     </div>`;
