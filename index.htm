@@ -138,6 +138,33 @@ select:focus{border-color:var(--gold)}
 .avail-one{background:rgba(240,180,41,.15);color:var(--gold)}
 .avail-none{background:rgba(107,118,148,.12);color:var(--muted)}
 
+/* ── MONSTER LAB ── */
+.lab-hero{background:var(--surface2);border:1px solid var(--border2);border-radius:14px;padding:18px 16px;margin-bottom:14px;text-align:center}
+.lab-hero h2{font-family:'Cinzel',serif;font-size:15px;color:#a78bfa;margin-bottom:6px}
+.lab-hero p{font-size:12px;color:var(--muted);line-height:1.5}
+.lab-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.lab-stat{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center}
+.lab-stat .sv{font-size:20px;font-weight:700;line-height:1}
+.lab-stat .sl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-top:3px}
+.cell-threshold{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;justify-content:center}
+.lab-list{display:flex;flex-direction:column;gap:8px}
+.lab-row{display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;transition:border-color .2s}
+.lab-row:hover{border-color:var(--border2)}
+.lab-row.complete{border-color:rgba(0,229,176,.35);background:rgba(0,229,176,.03)}
+.lab-row.almost{border-color:rgba(240,180,41,.35);background:rgba(240,180,41,.03)}
+.lab-emoji{font-size:26px;flex-shrink:0;width:36px;text-align:center}
+.lab-info{flex:1;min-width:0}
+.lab-name{font-size:14px;font-weight:700;margin-bottom:2px}
+.lab-meta{font-size:10px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.lab-bar-wrap{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden;min-width:60px;max-width:120px}
+.lab-bar-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.lab-cells{font-size:13px;font-weight:800;min-width:44px;text-align:right;flex-shrink:0}
+.cells-needed{font-size:9px;color:var(--muted);text-align:right;margin-top:1px}
+.cell-complete{color:var(--teal)}
+.cell-high{color:var(--gold)}
+.cell-mid{color:#a78bfa}
+.cell-low{color:var(--muted2)}
+
 /* ── TEAM TAB ── */
 .team-hero{background:var(--surface2);border:1px solid var(--border2);border-radius:14px;padding:20px 16px;margin-bottom:16px;text-align:center}
 .team-hero h2{font-family:'Cinzel',serif;font-size:16px;color:var(--gold2);margin-bottom:6px}
@@ -199,6 +226,7 @@ select:focus{border-color:var(--gold)}
   <button class="tab active" onclick="switchTab('collection',this)">📚 Collection <span class="nbadge" id="own-badge">0</span></button>
   <button class="tab" onclick="switchTab('breeding',this)">🧬 Breeding Lab</button>
   <button class="tab" onclick="switchTab('team',this)">⚔ Best Team</button>
+  <button class="tab" onclick="switchTab('lab',this)">🔬 Monster Lab</button>
 </div>
 
 <div id="tab-collection" class="panel active">
@@ -215,6 +243,12 @@ select:focus{border-color:var(--gold)}
 
 <div id="tab-team" class="panel">
   <div id="team-content">
+    <div class="load-screen"><div class="lt" style="color:var(--muted)">Loading…</div></div>
+  </div>
+</div>
+
+<div id="tab-lab" class="panel">
+  <div id="lab-content">
     <div class="load-screen"><div class="lt" style="color:var(--muted)">Loading…</div></div>
   </div>
 </div>
@@ -315,6 +349,7 @@ function mapRow(row){
     time    : g(row,'time','Time','breed_time','Breed Time','breeding time','Time to Breed'),
     books   : g(row,'books','Books','book','Book','collection'),
     own     : g(row,'own','Own','owned','Owned'),
+    cells   : parseInt(g(row,'cells','Cells','cell count','Cell Count'))||0,
   };
 }
 
@@ -408,7 +443,7 @@ function loadFromPaste(){
   renderAll();
 }
 
-function renderAll(){renderCol();renderBreed();renderTeam();updateBadge()}
+function renderAll(){renderCol();renderBreed();renderTeam();renderLab();updateBadge()}
 
 function showDebug(){
   if(!monsters.length){alert('No monsters loaded yet.');return;}
@@ -569,7 +604,7 @@ function renderBreedList(){
 
   // Apply parent availability filter
   if(breedFilter==='ready'){
-    breedable=breedable.filter(m=>parentOwnCount(m)===2);
+    breedable=breedable.filter(m=>parentOwnCount(m)===2&&!isOwned(m));
   } else if(breedFilter==='one'){
     breedable=breedable.filter(m=>parentOwnCount(m)===1);
   }
@@ -904,6 +939,106 @@ function buildTeam() {
           ? ' Element diversity bonus applied — 3 unique elements for broad coverage.' : ''}
       </div>
     </div>
+  `;
+}
+
+// ── MONSTER LAB ──────────────────────────────────────────────────────────────
+const CELL_MAX = 100; // cells needed to unlock a monster
+
+function renderLab(){
+  const div = document.getElementById('lab-content');
+  if(!div) return;
+
+  // Only monsters with cell data (cells > 0)
+  const cellMonsters = monsters.filter(m => m.cells > 0).sort((a,b) => b.cells - a.cells);
+  const labSearch = (document.getElementById('lab-search')||{}).value||'';
+  const labFilter = (document.getElementById('lab-filter')||{}).value||'all';
+
+  const totalCells = cellMonsters.reduce((s,m)=>s+m.cells,0);
+  const complete    = cellMonsters.filter(m=>m.cells>=CELL_MAX);
+  const inProgress  = cellMonsters.filter(m=>m.cells>0&&m.cells<CELL_MAX);
+
+  // Apply filters
+  let filtered = cellMonsters;
+  if(labSearch) filtered = filtered.filter(m=>m.name.toLowerCase().includes(labSearch.toLowerCase()));
+  if(labFilter==='complete')   filtered = filtered.filter(m=>m.cells>=CELL_MAX);
+  if(labFilter==='inprogress') filtered = filtered.filter(m=>m.cells>0&&m.cells<CELL_MAX);
+  if(labFilter==='almost')     filtered = filtered.filter(m=>m.cells>=75&&m.cells<CELL_MAX);
+
+  div.innerHTML = `
+    <div class="lab-hero">
+      <h2>🔬 Monster Lab</h2>
+      <p>Track your cell progress toward unlocking monsters.<br>
+         Reads the <strong style="color:#a78bfa">Cells</strong> column from your sheet.</p>
+    </div>
+
+    <div class="lab-summary">
+      <div class="lab-stat">
+        <div class="sv" style="color:#a78bfa">${cellMonsters.length}</div>
+        <div class="sl">Tracked</div>
+      </div>
+      <div class="lab-stat">
+        <div class="sv" style="color:var(--teal)">${complete.length}</div>
+        <div class="sl">Complete</div>
+      </div>
+      <div class="lab-stat">
+        <div class="sv" style="color:var(--gold)">${inProgress.length}</div>
+        <div class="sl">In Progress</div>
+      </div>
+    </div>
+
+    <div class="controls" style="margin-bottom:14px">
+      <div class="sw">
+        <span class="si2">🔍</span>
+        <input type="text" id="lab-search" placeholder="Search monsters…" value="${labSearch}" oninput="renderLab()">
+      </div>
+      <div class="frow">
+        <select id="lab-filter" onchange="renderLab()" style="flex:unset;width:100%">
+          <option value="all"        ${labFilter==='all'?'selected':''}>🔬 All with Cells</option>
+          <option value="complete"   ${labFilter==='complete'?'selected':''}>✅ Complete (${CELL_MAX}+ cells)</option>
+          <option value="almost"     ${labFilter==='almost'?'selected':''}>🔥 Almost There (75+)</option>
+          <option value="inprogress" ${labFilter==='inprogress'?'selected':''}>⏳ In Progress</option>
+        </select>
+      </div>
+    </div>
+
+    ${filtered.length === 0
+      ? `<div class="empty"><div class="ei">🔬</div>
+          <p>${cellMonsters.length===0
+            ? 'No cell data found. Add a <strong style="color:#a78bfa">Cells</strong> column to your sheet with numeric values.'
+            : 'No monsters match this filter.'}</p>
+         </div>`
+      : `<div class="lab-list">
+          ${filtered.map(m => {
+            const pct = Math.min(100, Math.round(m.cells / CELL_MAX * 100));
+            const needed = Math.max(0, CELL_MAX - m.cells);
+            const isDone = m.cells >= CELL_MAX;
+            const isAlmost = !isDone && m.cells >= 75;
+            const emoji = em(m.element);
+            const color = ec(m.element);
+            const barColor = isDone ? 'var(--teal)' : isAlmost ? 'var(--gold)' : '#a78bfa';
+            const cellClass = isDone ? 'cell-complete' : isAlmost ? 'cell-high' : m.cells >= 50 ? 'cell-mid' : 'cell-low';
+            return `<div class="lab-row ${isDone?'complete':isAlmost?'almost':''}">
+              <div class="lab-emoji" style="filter:drop-shadow(0 0 6px ${color}60)">${emoji}</div>
+              <div class="lab-info">
+                <div class="lab-name">${m.name}</div>
+                <div class="lab-meta">
+                  <span class="rbadge ${rc(m.rarity)}" style="margin:0">${m.rarity||'?'}</span>
+                  <span>${m.element||'—'}</span>
+                  ${isDone?'<span style="color:var(--teal);font-weight:700">✓ Unlockable!</span>':''}
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+                <div class="lab-bar-wrap">
+                  <div class="lab-bar-fill" style="width:${pct}%;background:${barColor}"></div>
+                </div>
+                <div class="lab-cells ${cellClass}">${m.cells}<span style="font-size:9px;font-weight:400;color:var(--muted)">/${CELL_MAX}</span></div>
+                <div class="cells-needed">${isDone ? '✓ Ready' : `${needed} more needed`}</div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`
+    }
   `;
 }
 
